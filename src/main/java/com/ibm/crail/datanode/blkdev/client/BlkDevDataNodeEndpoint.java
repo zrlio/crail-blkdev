@@ -51,7 +51,7 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 	private final DirectBufferCache cache;
 
 	public BlkDevDataNodeEndpoint() throws IOException {
-		if (BlkDevDataNodeUtils.fileBlockOffset(DirectoryRecord.MaxSize) != 0) {
+		if (BlkDevDataNodeUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
 			throw new IllegalArgumentException("Block device requires directory record size to be block aligned");
 		}
 		Path path = FileSystems.getDefault().getPath(BlkDevDataNodeConstants.DATA_PATH);
