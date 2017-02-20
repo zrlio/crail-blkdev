@@ -24,11 +24,11 @@ package com.ibm.crail.datanode.blkdev;
 
 import com.google.common.primitives.Ints;
 import com.ibm.crail.conf.CrailConfiguration;
-import com.ibm.crail.datanode.DataNodeEndpoint;
-import com.ibm.crail.datanode.blkdev.client.BlkDevDataNodeEndpoint;
+import com.ibm.crail.datanode.blkdev.client.BlkDevStorageEndpoint;
+import com.ibm.crail.storage.StorageEndpoint;
+import com.ibm.crail.storage.StorageTier;
 import com.ibm.crail.utils.CrailUtils;
 import com.ibm.jaio.Files;
-import com.ibm.crail.datanode.DataNode;
 import com.ibm.crail.namenode.protocol.DataNodeStatistics;
 import org.slf4j.Logger;
 
@@ -38,7 +38,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 
-public class BlkDevDataNode extends DataNode {
+public class BlkDevStorageTier extends StorageTier {
 
 	private static final Logger LOG = CrailUtils.getLogger();
 	private InetSocketAddress datanodeAddr;
@@ -48,16 +48,16 @@ public class BlkDevDataNode extends DataNode {
 	}
 
 	public void printConf(Logger logger) {
-		BlkDevDataNodeConstants.printConf(logger);
+		BlkDevStorageConstants.printConf(logger);
 	}
 
 	public void init(CrailConfiguration crailConfiguration, String[] args) throws IOException {
-		BlkDevDataNodeConstants.updateConstants(crailConfiguration);
-		BlkDevDataNodeConstants.verify();
+		BlkDevStorageConstants.updateConstants(crailConfiguration);
+		BlkDevStorageConstants.verify();
 	}
 
-	public DataNodeEndpoint createEndpoint(InetSocketAddress inetSocketAddress) throws IOException {
-		return new BlkDevDataNodeEndpoint();
+	public StorageEndpoint createEndpoint(InetSocketAddress inetSocketAddress) throws IOException {
+		return new BlkDevStorageEndpoint();
 	}
 
 	public void run() throws Exception {
@@ -67,7 +67,7 @@ public class BlkDevDataNode extends DataNode {
 		int port = 12345;
 		datanodeAddr = new InetSocketAddress(address, port);
 
-		String directory = BlkDevDataNodeConstants.DATA_PATH;
+		String directory = BlkDevStorageConstants.DATA_PATH;
 		LOG.info("Block device " + directory);
 
 		Path path = FileSystems.getDefault().getPath(directory);
@@ -79,17 +79,17 @@ public class BlkDevDataNode extends DataNode {
 //					" bytes are" + "available on block device");
 //		}
 
-		long alignedSize = BlkDevDataNodeConstants.STORAGE_LIMIT - (BlkDevDataNodeConstants.STORAGE_LIMIT % BlkDevDataNodeConstants.ALLOCATION_SIZE);
+		long alignedSize = BlkDevStorageConstants.STORAGE_LIMIT - (BlkDevStorageConstants.STORAGE_LIMIT % BlkDevStorageConstants.ALLOCATION_SIZE);
 		long addr = 0;
 		while (alignedSize > 0) {
 			DataNodeStatistics statistics = this.getDataNode();
 			LOG.info("datanode statistics, freeBlocks " + statistics.getFreeBlockCount());
 
-			LOG.info("new block, length " + BlkDevDataNodeConstants.ALLOCATION_SIZE);
-			LOG.debug("block stag 0, addr 0, length " + BlkDevDataNodeConstants.ALLOCATION_SIZE);
-			alignedSize -= BlkDevDataNodeConstants.ALLOCATION_SIZE;
-			this.setBlock(addr, (int)BlkDevDataNodeConstants.ALLOCATION_SIZE, 0);
-			addr += BlkDevDataNodeConstants.ALLOCATION_SIZE;
+			LOG.info("new block, length " + BlkDevStorageConstants.ALLOCATION_SIZE);
+			LOG.debug("block stag 0, addr 0, length " + BlkDevStorageConstants.ALLOCATION_SIZE);
+			alignedSize -= BlkDevStorageConstants.ALLOCATION_SIZE;
+			this.setBlock(addr, (int) BlkDevStorageConstants.ALLOCATION_SIZE, 0);
+			addr += BlkDevStorageConstants.ALLOCATION_SIZE;
 		}
 
 		while (true) {

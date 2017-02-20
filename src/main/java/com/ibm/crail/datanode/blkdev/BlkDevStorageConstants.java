@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 
-public class BlkDevDataNodeConstants {
+public class BlkDevStorageConstants {
 
-	private final static String PREFIX = "crail.datanode.blkdev";
+	private final static String PREFIX = "crail.storage.blkdev";
 
 	public static final String STORAGE_LIMIT_KEY = "storagelimit";
 	public static long STORAGE_LIMIT = 1073741824; /* 1GB */

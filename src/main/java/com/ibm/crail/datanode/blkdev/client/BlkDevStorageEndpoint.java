@@ -29,40 +29,39 @@ import java.nio.file.Path;
 import java.util.concurrent.*;
 
 import com.ibm.crail.conf.CrailConstants;
-import com.ibm.crail.datanode.blkdev.BlkDevDataNodeConstants;
+import com.ibm.crail.datanode.blkdev.BlkDevStorageConstants;
+import com.ibm.crail.storage.StorageEndpoint;
+import com.ibm.crail.storage.DataResult;
 import com.ibm.jaio.*;
-import com.ibm.crail.core.DirectoryRecord;
-import com.ibm.crail.datanode.DataNodeEndpoint;
-import com.ibm.crail.datanode.DataResult;
 import com.ibm.crail.namenode.protocol.BlockInfo;
 import com.ibm.crail.utils.DirectBufferCache;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
-public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
+public class BlkDevStorageEndpoint implements StorageEndpoint {
 	private static final Logger LOG = CrailUtils.getLogger();
 
 	private final File file;
 	private final Semaphore concurrentOps;
 	private final AsynchronousIOQueue queue;
-	private final BlockingQueue<AsynchronousIOResultArray<BlkDevDataFuture>> results;
+	private final BlockingQueue<AsynchronousIOResultArray<BlkDevStorageFuture>> results;
 	private final ThreadLocal<AsynchronousIOOperationArray> readOp;
 	private final ThreadLocal<AsynchronousIOOperationArray> writeOp;
 	private final DirectBufferCache cache;
 
-	public BlkDevDataNodeEndpoint() throws IOException {
-		if (BlkDevDataNodeUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
+	public BlkDevStorageEndpoint() throws IOException {
+		if (BlkDevStorageUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
 			throw new IllegalArgumentException("Block device requires directory record size to be block aligned");
 		}
-		Path path = FileSystems.getDefault().getPath(BlkDevDataNodeConstants.DATA_PATH);
+		Path path = FileSystems.getDefault().getPath(BlkDevStorageConstants.DATA_PATH);
 		this.file = new File(path, OpenOption.READ, OpenOption.WRITE, OpenOption.DIRECT, OpenOption.SYNC);
-		this.concurrentOps = new Semaphore(BlkDevDataNodeConstants.QUEUE_DEPTH, true);
-		this.queue = new AsynchronousIOQueue(BlkDevDataNodeConstants.QUEUE_DEPTH);
-		this.results = new ArrayBlockingQueue(BlkDevDataNodeConstants.QUEUE_DEPTH);
+		this.concurrentOps = new Semaphore(BlkDevStorageConstants.QUEUE_DEPTH, true);
+		this.queue = new AsynchronousIOQueue(BlkDevStorageConstants.QUEUE_DEPTH);
+		this.results = new ArrayBlockingQueue(BlkDevStorageConstants.QUEUE_DEPTH);
 		int i = results.remainingCapacity();
 		while (i-- > 0) {
 			try {
-				results.put(new AsynchronousIOResultArray(BlkDevDataNodeConstants.QUEUE_DEPTH));
+				results.put(new AsynchronousIOResultArray(BlkDevStorageConstants.QUEUE_DEPTH));
 			} catch (InterruptedException e) {
 				throw new IOException(e);
 			}
@@ -107,14 +106,14 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 			throw new IOException("remote offset too small " + remoteOffset);
 		}
 
-		if (remoteMr.getAddr() + remoteOffset + buffer.remaining() > BlkDevDataNodeConstants.STORAGE_LIMIT){
+		if (remoteMr.getAddr() + remoteOffset + buffer.remaining() > BlkDevStorageConstants.STORAGE_LIMIT){
 			long tmpAddr = remoteMr.getAddr() + remoteOffset + buffer.remaining();
 			throw new IOException("remote fileOffset + remoteOffset + len too large " + tmpAddr);
 		}
 
 //		LOG.debug("op = " + op.name() +
 //				", position = " + buffer.position() +
-//				", Buffer address = " + Long.toHexString(BlkDevDataNodeUtils.getAddress(buffer)) +
+//				", Buffer address = " + Long.toHexString(BlkDevStorageUtils.getAddress(buffer)) +
 //				", localOffset = " + buffer.position() +
 //				", remoteOffset = " + remoteOffset +
 //				", remoteAddr = " + remoteMr.getAddr() +
@@ -126,32 +125,32 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 			poll();
 		}
 
-		boolean aligned = BlkDevDataNodeUtils.fileBlockOffset(remoteOffset) == 0
-				&& BlkDevDataNodeUtils.fileBlockOffset(buffer.remaining()) == 0
-				&& BlkDevDataNodeUtils.fileBlockOffset(BlkDevDataNodeUtils.getAddress(buffer) + buffer.position()) == 0;
-		long fileOffset = BlkDevDataNodeUtils.fileOffset(remoteMr, remoteOffset);
+		boolean aligned = BlkDevStorageUtils.fileBlockOffset(remoteOffset) == 0
+				&& BlkDevStorageUtils.fileBlockOffset(buffer.remaining()) == 0
+				&& BlkDevStorageUtils.fileBlockOffset(BlkDevStorageUtils.getAddress(buffer) + buffer.position()) == 0;
+		long fileOffset = BlkDevStorageUtils.fileOffset(remoteMr, remoteOffset);
 		AsynchronousIOOperationArray ops = null;
-		BlkDevDataFuture future = null;
+		BlkDevStorageFuture future = null;
 		if (aligned) {
 //			LOG.debug("aligned");
-			future = new BlkDevDataFuture(this, buffer.remaining());
+			future = new BlkDevStorageFuture(this, buffer.remaining());
 			switch(op) {
 				case READ:
 					ops = readOp.get();
-					AsynchronousIORead<BlkDevDataFuture> read =
-							(AsynchronousIORead<BlkDevDataFuture>) ops.get(0);
+					AsynchronousIORead<BlkDevStorageFuture> read =
+							(AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
 					read.set(file, buffer, fileOffset, future);
 					break;
 				case WRITE:
 					ops = writeOp.get();
-					AsynchronousIOWrite<BlkDevDataFuture> write =
-							(AsynchronousIOWrite<BlkDevDataFuture>) ops.get(0);
+					AsynchronousIOWrite<BlkDevStorageFuture> write =
+							(AsynchronousIOWrite<BlkDevStorageFuture>) ops.get(0);
 					write.set(file, buffer, fileOffset, future);
 					break;
 			}
 		} else {
-			long alignedSize = BlkDevDataNodeUtils.alignLength(remoteOffset, buffer.remaining());
-			long alignedFileOffset = BlkDevDataNodeUtils.alignOffset(fileOffset);
+			long alignedSize = BlkDevStorageUtils.alignLength(remoteOffset, buffer.remaining());
+			long alignedFileOffset = BlkDevStorageUtils.alignOffset(fileOffset);
 
 			ByteBuffer stagingBuffer = cache.getBuffer();
 			stagingBuffer.clear();
@@ -160,9 +159,9 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 			try {
 				switch(op) {
 					case READ: {
-						future = new BlkDevDataUnalignedReadFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+						future = new BlkDevStorageUnalignedReadFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
 						ops = readOp.get();
-						AsynchronousIORead<BlkDevDataFuture> read = (AsynchronousIORead<BlkDevDataFuture>) ops.get(0);
+						AsynchronousIORead<BlkDevStorageFuture> read = (AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
 						read.set(file, stagingBuffer, alignedFileOffset, future);
 						break;
 					}
@@ -171,16 +170,16 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 							// Append only file system and dir entries (512B) are always aligned!
 							// XXX this only works with write append (currently only supported interface)!
 							stagingBuffer.limit((int) Files.blockSize());
-							future = new BlkDevDataUnalignedRMWFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+							future = new BlkDevStorageUnalignedRMWFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
 							ops = readOp.get();
-							AsynchronousIORead<BlkDevDataFuture> read = (AsynchronousIORead<BlkDevDataFuture>) ops.get(0);
+							AsynchronousIORead<BlkDevStorageFuture> read = (AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
 							read.set(file, stagingBuffer, alignedFileOffset, future);
 						} else {
 							// If the file offset is aligned we do not need to read
-							future = new BlkDevDataUnalignedWriteFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+							future = new BlkDevStorageUnalignedWriteFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
 							ops = writeOp.get();
-							AsynchronousIOWrite<BlkDevDataFuture> write =
-									(AsynchronousIOWrite<BlkDevDataFuture>) ops.get(0);
+							AsynchronousIOWrite<BlkDevStorageFuture> write =
+									(AsynchronousIOWrite<BlkDevStorageFuture>) ops.get(0);
 							write.set(file, stagingBuffer, fileOffset, future);
 						}
 						break;
@@ -199,11 +198,11 @@ public class BlkDevDataNodeEndpoint implements DataNodeEndpoint {
 	}
 
 	void poll() throws IOException, InterruptedException {
-		AsynchronousIOResultArray<BlkDevDataFuture> result = results.take();
+		AsynchronousIOResultArray<BlkDevStorageFuture> result = results.take();
 		int n = queue.poll(result);
 		concurrentOps.release(n);
 		for (int i = 0; i < n; i++) {
-			BlkDevDataFuture future = result.get(i).getAttachment();
+			BlkDevStorageFuture future = result.get(i).getAttachment();
 			future.signal(result.get(i).getResult());
 		}
 		results.put(result);

@@ -28,18 +28,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 
-public final class BlkDevDataUnalignedReadFuture extends BlkDevDataUnalignedFuture {
+public final class BlkDevStorageUnalignedReadFuture extends BlkDevStorageUnalignedFuture {
 
-	public BlkDevDataUnalignedReadFuture(BlkDevDataNodeEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr,
-	                                     long remoteOffset, ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedReadFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr,
+											long remoteOffset, ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer, remoteMr, remoteOffset, stagingBuffer);
 	}
 
 	@Override
 	public void signal(int result) throws IOException, InterruptedException {
 		if (result >= 0) {
-			long srcAddr = BlkDevDataNodeUtils.getAddress(stagingBuffer) + BlkDevDataNodeUtils.fileBlockOffset(remoteOffset);
-			long dstAddr = BlkDevDataNodeUtils.getAddress(buffer) + localOffset;
+			long srcAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
+			long dstAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
 			unsafe.copyMemory(srcAddr, dstAddr, len);
 		}
 		super.signal(result);

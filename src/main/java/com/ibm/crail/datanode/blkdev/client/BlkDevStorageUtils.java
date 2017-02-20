@@ -28,7 +28,7 @@ import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
 
-public class BlkDevDataNodeUtils {
+public class BlkDevStorageUtils {
 
 	public static long fileOffset(BlockInfo remoteMr, long remoteOffset) {
 		return remoteMr.getAddr() + remoteOffset;

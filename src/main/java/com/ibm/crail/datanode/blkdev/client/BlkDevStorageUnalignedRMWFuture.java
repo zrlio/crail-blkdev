@@ -22,7 +22,7 @@
 
 package com.ibm.crail.datanode.blkdev.client;
 
-import com.ibm.crail.datanode.DataResult;
+import com.ibm.crail.storage.DataResult;
 import com.ibm.crail.namenode.protocol.BlockInfo;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class BlkDevDataUnalignedRMWFuture extends BlkDevDataUnalignedFuture {
+public final class BlkDevStorageUnalignedRMWFuture extends BlkDevStorageUnalignedFuture {
 
 	private static final Logger LOG = CrailUtils.getLogger();
 
@@ -42,8 +42,8 @@ public final class BlkDevDataUnalignedRMWFuture extends BlkDevDataUnalignedFutur
 
 	private volatile boolean done;
 
-	public BlkDevDataUnalignedRMWFuture(BlkDevDataNodeEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
-	                                    ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedRMWFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
+										   ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer, remoteMr, remoteOffset, stagingBuffer);
 		future = null;
 		done = false;
@@ -57,14 +57,14 @@ public final class BlkDevDataUnalignedRMWFuture extends BlkDevDataUnalignedFutur
 	@Override
 	public void signal(int result) throws IOException, InterruptedException {
 		if (result >= 0) {
-			long srcAddr = BlkDevDataNodeUtils.getAddress(buffer) + localOffset;
-			long dstAddr = BlkDevDataNodeUtils.getAddress(stagingBuffer) + BlkDevDataNodeUtils.fileBlockOffset(remoteOffset);
+			long srcAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
+			long dstAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
 			unsafe.copyMemory(srcAddr, dstAddr, len);
 
 			stagingBuffer.clear();
-			int alignedLen = (int) BlkDevDataNodeUtils.alignLength(remoteOffset, len);
+			int alignedLen = (int) BlkDevStorageUtils.alignLength(remoteOffset, len);
 			stagingBuffer.limit(alignedLen);
-			future = endpoint.write(stagingBuffer, null, remoteMr, BlkDevDataNodeUtils.alignOffset(remoteOffset));
+			future = endpoint.write(stagingBuffer, null, remoteMr, BlkDevStorageUtils.alignOffset(remoteOffset));
 		}
 		super.signal(result);
 	}

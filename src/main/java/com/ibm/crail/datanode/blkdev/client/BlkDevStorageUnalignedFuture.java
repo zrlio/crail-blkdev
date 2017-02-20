@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by jpf on 16.06.16.
  */
-public abstract class BlkDevDataUnalignedFuture extends BlkDevDataFuture {
+public abstract class BlkDevStorageUnalignedFuture extends BlkDevStorageFuture {
 	protected final ByteBuffer buffer;
 	protected final long localOffset;
 	protected final BlockInfo remoteMr;
@@ -41,8 +41,8 @@ public abstract class BlkDevDataUnalignedFuture extends BlkDevDataFuture {
 	protected final ByteBuffer stagingBuffer;
 	protected Unsafe unsafe;
 
-	public BlkDevDataUnalignedFuture(BlkDevDataNodeEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
-	                                 ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
+										ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer.remaining());
 		this.buffer = buffer;
 		this.localOffset = buffer.position();

@@ -22,7 +22,7 @@
 
 package com.ibm.crail.datanode.blkdev.client;
 
-import com.ibm.crail.datanode.DataResult;
+import com.ibm.crail.storage.DataResult;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
@@ -33,8 +33,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BlkDevDataFuture implements Future<DataResult>, DataResult {
-	protected final BlkDevDataNodeEndpoint endpoint;
+public class BlkDevStorageFuture implements Future<DataResult>, DataResult {
+	protected final BlkDevStorageEndpoint endpoint;
 
 	private static final Logger LOG = CrailUtils.getLogger();
 
@@ -46,7 +46,7 @@ public class BlkDevDataFuture implements Future<DataResult>, DataResult {
 
 	static final AtomicInteger hash = new AtomicInteger(0);
 
-	public BlkDevDataFuture(BlkDevDataNodeEndpoint endpoint, int len) {
+	public BlkDevStorageFuture(BlkDevStorageEndpoint endpoint, int len) {
 		this.endpoint = endpoint;
 		this.done = false;
 		this.result = 0;

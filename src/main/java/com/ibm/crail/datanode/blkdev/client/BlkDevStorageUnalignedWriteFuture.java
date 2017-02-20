@@ -27,13 +27,13 @@ import com.ibm.crail.namenode.protocol.BlockInfo;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class BlkDevDataUnalignedWriteFuture extends BlkDevDataUnalignedFuture {
+public class BlkDevStorageUnalignedWriteFuture extends BlkDevStorageUnalignedFuture {
 
-	public BlkDevDataUnalignedWriteFuture(BlkDevDataNodeEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
-	                                      ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedWriteFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
+											 ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer,remoteMr, remoteOffset, stagingBuffer);
-		long srcAddr = BlkDevDataNodeUtils.getAddress(buffer) + localOffset;
-		long dstAddr = BlkDevDataNodeUtils.getAddress(stagingBuffer) + BlkDevDataNodeUtils.fileBlockOffset(remoteOffset);
+		long srcAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
+		long dstAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
 		unsafe.copyMemory(srcAddr, dstAddr, len);
 	}
 
