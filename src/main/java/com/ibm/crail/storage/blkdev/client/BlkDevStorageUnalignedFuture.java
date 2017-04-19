@@ -20,18 +20,15 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.namenode.protocol.BlockInfo;
+import com.ibm.crail.metadata.BlockInfo;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
-/**
- * Created by jpf on 16.06.16.
- */
 public abstract class BlkDevStorageUnalignedFuture extends BlkDevStorageFuture {
 	protected final ByteBuffer buffer;
 	protected final long localOffset;

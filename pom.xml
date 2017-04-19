@@ -29,7 +29,7 @@
     </dependency>
     <dependency>
       <groupId>com.ibm.crail</groupId>
-      <artifactId>crail-client</artifactId>
+      <artifactId>crail-storage</artifactId>
       <version>1.0</version>
     </dependency>
     <dependency>

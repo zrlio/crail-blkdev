@@ -20,7 +20,7 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev;
+package com.ibm.crail.storage.blkdev;
 
 import com.ibm.crail.conf.CrailConfiguration;
 import com.ibm.crail.conf.CrailConstants;

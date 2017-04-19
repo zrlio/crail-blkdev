@@ -20,17 +20,18 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.storage.DataResult;
-import com.ibm.crail.namenode.protocol.BlockInfo;
+
+import com.ibm.crail.metadata.BlockInfo;
+import com.ibm.crail.storage.StorageFuture;
+import com.ibm.crail.storage.StorageResult;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -38,7 +39,7 @@ public final class BlkDevStorageUnalignedRMWFuture extends BlkDevStorageUnaligne
 
 	private static final Logger LOG = CrailUtils.getLogger();
 
-	private Future<DataResult> future;
+	private StorageFuture future;
 
 	private volatile boolean done;
 
@@ -70,7 +71,7 @@ public final class BlkDevStorageUnalignedRMWFuture extends BlkDevStorageUnaligne
 	}
 
 	@Override
-	public DataResult get(long timeout, TimeUnit unit)
+	public StorageResult get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		if (!done) {
 			super.get(timeout, unit);

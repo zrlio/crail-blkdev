@@ -20,20 +20,20 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.storage.DataResult;
+import com.ibm.crail.storage.StorageFuture;
+import com.ibm.crail.storage.StorageResult;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BlkDevStorageFuture implements Future<DataResult>, DataResult {
+public class BlkDevStorageFuture implements StorageFuture, StorageResult {
 	protected final BlkDevStorageEndpoint endpoint;
 
 	private static final Logger LOG = CrailUtils.getLogger();
@@ -78,7 +78,7 @@ public class BlkDevStorageFuture implements Future<DataResult>, DataResult {
 		return done;
 	}
 
-	public final DataResult get() throws InterruptedException, ExecutionException {
+	public final StorageResult get() throws InterruptedException, ExecutionException {
 		try {
 			return get(-1, null);
 		} catch (TimeoutException e) {
@@ -86,7 +86,7 @@ public class BlkDevStorageFuture implements Future<DataResult>, DataResult {
 		}
 	}
 
-	public DataResult get(long timeout, TimeUnit unit)
+	public StorageResult get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 		if (!done) {
 			// TODO: timeout
@@ -116,5 +116,9 @@ public class BlkDevStorageFuture implements Future<DataResult>, DataResult {
 	@Override
 	public boolean equals(Object o) {
 		return hashCode == o.hashCode();
+	}
+
+	public boolean isSynchronous() {
+		return false;
 	}
 }

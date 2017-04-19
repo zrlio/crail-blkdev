@@ -20,29 +20,26 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.namenode.protocol.BlockInfo;
+import com.ibm.crail.metadata.BlockInfo;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+public class BlkDevStorageUnalignedWriteFuture extends BlkDevStorageUnalignedFuture {
 
-public final class BlkDevStorageUnalignedReadFuture extends BlkDevStorageUnalignedFuture {
-
-	public BlkDevStorageUnalignedReadFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr,
-											long remoteOffset, ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
-		super(endpoint, buffer, remoteMr, remoteOffset, stagingBuffer);
+	public BlkDevStorageUnalignedWriteFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
+											 ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+		super(endpoint, buffer,remoteMr, remoteOffset, stagingBuffer);
+		long srcAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
+		long dstAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
+		unsafe.copyMemory(srcAddr, dstAddr, len);
 	}
 
 	@Override
 	public void signal(int result) throws IOException, InterruptedException {
-		if (result >= 0) {
-			long srcAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
-			long dstAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
-			unsafe.copyMemory(srcAddr, dstAddr, len);
-		}
-		super.signal(result);
 		endpoint.putBuffer(stagingBuffer);
+		super.signal(result);
 	}
 }

@@ -20,10 +20,10 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
+import com.ibm.crail.metadata.BlockInfo;
 import com.ibm.jaio.Files;
-import com.ibm.crail.namenode.protocol.BlockInfo;
 import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;

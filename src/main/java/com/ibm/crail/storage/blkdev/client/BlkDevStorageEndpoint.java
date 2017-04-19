@@ -20,7 +20,7 @@
  *
  */
 
-package com.ibm.crail.datanode.blkdev.client;
+package com.ibm.crail.storage.blkdev.client;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,11 +29,11 @@ import java.nio.file.Path;
 import java.util.concurrent.*;
 
 import com.ibm.crail.conf.CrailConstants;
-import com.ibm.crail.datanode.blkdev.BlkDevStorageConstants;
+import com.ibm.crail.metadata.BlockInfo;
+import com.ibm.crail.storage.StorageFuture;
+import com.ibm.crail.storage.blkdev.BlkDevStorageConstants;
 import com.ibm.crail.storage.StorageEndpoint;
-import com.ibm.crail.storage.DataResult;
 import com.ibm.jaio.*;
-import com.ibm.crail.namenode.protocol.BlockInfo;
 import com.ibm.crail.utils.DirectBufferCache;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
@@ -92,7 +92,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 		private Operation() {}
 	}
 
-	Future<DataResult> Op(Operation op, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset) throws IOException, InterruptedException {
+	StorageFuture Op(Operation op, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset) throws IOException, InterruptedException {
 		if (buffer.remaining() > CrailConstants.BLOCK_SIZE){
 			throw new IOException("write size too large " + buffer.remaining());
 		}
@@ -212,11 +212,11 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 		cache.putBuffer(buffer);
 	}
 
-	public Future<DataResult> write(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
+	public StorageFuture write(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
 		return Op(Operation.WRITE, buffer, blockInfo, remoteOffset);
 	}
 
-	public Future<DataResult> read(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
+	public StorageFuture read(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
 		return Op(Operation.READ, buffer, blockInfo, remoteOffset);
 	}
 
