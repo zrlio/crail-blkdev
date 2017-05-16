@@ -20,26 +20,24 @@
  *
  */
 
-package com.ibm.crail.storage.blkdev.client;
+package com.ibm.crail.storage.blkdev;
 
 import com.ibm.crail.CrailBuffer;
-import com.ibm.crail.metadata.BlockInfo;
+import com.ibm.crail.conf.CrailConstants;
+import com.ibm.crail.memory.BufferCache;
+import com.ibm.crail.memory.OffHeapBuffer;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
-public class BlkDevStorageUnalignedWriteFuture extends BlkDevStorageUnalignedFuture {
 
-	public BlkDevStorageUnalignedWriteFuture(BlkDevStorageEndpoint endpoint, CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset,
-											 CrailBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
-		super(endpoint, buffer,blockInfo, remoteOffset, stagingBuffer);
-		long srcAddr = buffer.address() + localOffset;
-		long dstAddr = stagingBuffer.address() + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
-		unsafe.copyMemory(srcAddr, dstAddr, len);
+public class BlkDevBufferCache extends BufferCache {
+
+	public BlkDevBufferCache() throws IOException {
+		super();
 	}
 
-	@Override
-	public void signal(int result) throws IOException, InterruptedException {
-		endpoint.putBuffer(stagingBuffer);
-		super.signal(result);
+	public CrailBuffer allocateBuffer() throws IOException {
+		return OffHeapBuffer.wrap(ByteBuffer.allocateDirect(CrailConstants.BUFFER_SIZE));
 	}
 }

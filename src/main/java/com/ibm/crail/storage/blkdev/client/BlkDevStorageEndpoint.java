@@ -23,18 +23,19 @@
 package com.ibm.crail.storage.blkdev.client;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.concurrent.*;
 
+import com.ibm.crail.CrailBuffer;
 import com.ibm.crail.conf.CrailConstants;
+import com.ibm.crail.memory.BufferCache;
 import com.ibm.crail.metadata.BlockInfo;
 import com.ibm.crail.storage.StorageFuture;
+import com.ibm.crail.storage.blkdev.BlkDevBufferCache;
 import com.ibm.crail.storage.blkdev.BlkDevStorageConstants;
 import com.ibm.crail.storage.StorageEndpoint;
 import com.ibm.jaio.*;
-import com.ibm.crail.utils.DirectBufferCache;
 import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
@@ -47,7 +48,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 	private final BlockingQueue<AsynchronousIOResultArray<BlkDevStorageFuture>> results;
 	private final ThreadLocal<AsynchronousIOOperationArray> readOp;
 	private final ThreadLocal<AsynchronousIOOperationArray> writeOp;
-	private final DirectBufferCache cache;
+	private final BufferCache cache;
 
 	public BlkDevStorageEndpoint() throws IOException {
 		if (BlkDevStorageUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
@@ -82,7 +83,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 				return ops;
 			}
 		};
-		this.cache = new DirectBufferCache();
+		this.cache = new BlkDevBufferCache();
 	}
 
 	enum Operation {
@@ -92,7 +93,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 		private Operation() {}
 	}
 
-	StorageFuture Op(Operation op, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset) throws IOException, InterruptedException {
+	StorageFuture Op(Operation op, CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
 		if (buffer.remaining() > CrailConstants.BLOCK_SIZE){
 			throw new IOException("write size too large " + buffer.remaining());
 		}
@@ -106,8 +107,8 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 			throw new IOException("remote offset too small " + remoteOffset);
 		}
 
-		if (remoteMr.getAddr() + remoteOffset + buffer.remaining() > BlkDevStorageConstants.STORAGE_LIMIT){
-			long tmpAddr = remoteMr.getAddr() + remoteOffset + buffer.remaining();
+		if (blockInfo.getAddr() + remoteOffset + buffer.remaining() > BlkDevStorageConstants.STORAGE_LIMIT){
+			long tmpAddr = blockInfo.getAddr() + remoteOffset + buffer.remaining();
 			throw new IOException("remote fileOffset + remoteOffset + len too large " + tmpAddr);
 		}
 
@@ -116,7 +117,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 //				", Buffer address = " + Long.toHexString(BlkDevStorageUtils.getAddress(buffer)) +
 //				", localOffset = " + buffer.position() +
 //				", remoteOffset = " + remoteOffset +
-//				", remoteAddr = " + remoteMr.getAddr() +
+//				", remoteAddr = " + blockInfo.getAddr() +
 //				", len = " + buffer.remaining());
 
 		while (!concurrentOps.tryAcquire()) {
@@ -127,8 +128,8 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 
 		boolean aligned = BlkDevStorageUtils.fileBlockOffset(remoteOffset) == 0
 				&& BlkDevStorageUtils.fileBlockOffset(buffer.remaining()) == 0
-				&& BlkDevStorageUtils.fileBlockOffset(BlkDevStorageUtils.getAddress(buffer) + buffer.position()) == 0;
-		long fileOffset = BlkDevStorageUtils.fileOffset(remoteMr, remoteOffset);
+				&& BlkDevStorageUtils.fileBlockOffset(buffer.address() + buffer.position()) == 0;
+		long fileOffset = BlkDevStorageUtils.fileOffset(blockInfo, remoteOffset);
 		AsynchronousIOOperationArray ops = null;
 		BlkDevStorageFuture future = null;
 		if (aligned) {
@@ -139,30 +140,30 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 					ops = readOp.get();
 					AsynchronousIORead<BlkDevStorageFuture> read =
 							(AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
-					read.set(file, buffer, fileOffset, future);
+					read.set(file, buffer.getByteBuffer(), fileOffset, future);
 					break;
 				case WRITE:
 					ops = writeOp.get();
 					AsynchronousIOWrite<BlkDevStorageFuture> write =
 							(AsynchronousIOWrite<BlkDevStorageFuture>) ops.get(0);
-					write.set(file, buffer, fileOffset, future);
+					write.set(file, buffer.getByteBuffer(), fileOffset, future);
 					break;
 			}
 		} else {
 			long alignedSize = BlkDevStorageUtils.alignLength(remoteOffset, buffer.remaining());
 			long alignedFileOffset = BlkDevStorageUtils.alignOffset(fileOffset);
 
-			ByteBuffer stagingBuffer = cache.getBuffer();
+			CrailBuffer stagingBuffer = cache.getBuffer();
 			stagingBuffer.clear();
 			stagingBuffer.limit((int)alignedSize);
 			//TODO: make sure buffer is aligned! We can align ourselfs or try to enforce java memalign option.
 			try {
 				switch(op) {
 					case READ: {
-						future = new BlkDevStorageUnalignedReadFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+						future = new BlkDevStorageUnalignedReadFuture(this, buffer, blockInfo, remoteOffset, stagingBuffer);
 						ops = readOp.get();
 						AsynchronousIORead<BlkDevStorageFuture> read = (AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
-						read.set(file, stagingBuffer, alignedFileOffset, future);
+						read.set(file, stagingBuffer.getByteBuffer(), alignedFileOffset, future);
 						break;
 					}
 					case WRITE: {
@@ -170,17 +171,17 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 							// Append only file system and dir entries (512B) are always aligned!
 							// XXX this only works with write append (currently only supported interface)!
 							stagingBuffer.limit((int) Files.blockSize());
-							future = new BlkDevStorageUnalignedRMWFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+							future = new BlkDevStorageUnalignedRMWFuture(this, buffer, blockInfo, remoteOffset, stagingBuffer);
 							ops = readOp.get();
 							AsynchronousIORead<BlkDevStorageFuture> read = (AsynchronousIORead<BlkDevStorageFuture>) ops.get(0);
-							read.set(file, stagingBuffer, alignedFileOffset, future);
+							read.set(file, stagingBuffer.getByteBuffer(), alignedFileOffset, future);
 						} else {
 							// If the file offset is aligned we do not need to read
-							future = new BlkDevStorageUnalignedWriteFuture(this, buffer, remoteMr, remoteOffset, stagingBuffer);
+							future = new BlkDevStorageUnalignedWriteFuture(this, buffer, blockInfo, remoteOffset, stagingBuffer);
 							ops = writeOp.get();
 							AsynchronousIOWrite<BlkDevStorageFuture> write =
 									(AsynchronousIOWrite<BlkDevStorageFuture>) ops.get(0);
-							write.set(file, stagingBuffer, fileOffset, future);
+							write.set(file, stagingBuffer.getByteBuffer(), fileOffset, future);
 						}
 						break;
 					}
@@ -208,15 +209,15 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 		results.put(result);
 	}
 
-	void putBuffer(ByteBuffer buffer) throws IOException {
+	void putBuffer(CrailBuffer buffer) throws IOException {
 		cache.putBuffer(buffer);
 	}
 
-	public StorageFuture write(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
+	public StorageFuture write(CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
 		return Op(Operation.WRITE, buffer, blockInfo, remoteOffset);
 	}
 
-	public StorageFuture read(ByteBuffer buffer, ByteBuffer region, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
+	public StorageFuture read(CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
 		return Op(Operation.READ, buffer, blockInfo, remoteOffset);
 	}
 

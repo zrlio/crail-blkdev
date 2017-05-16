@@ -22,28 +22,28 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
+import com.ibm.crail.CrailBuffer;
 import com.ibm.crail.metadata.BlockInfo;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
 
 public abstract class BlkDevStorageUnalignedFuture extends BlkDevStorageFuture {
-	protected final ByteBuffer buffer;
+	protected final CrailBuffer buffer;
 	protected final long localOffset;
-	protected final BlockInfo remoteMr;
+	protected final BlockInfo blockInfo;
 	protected final long remoteOffset;
 	protected final int len;
-	protected final ByteBuffer stagingBuffer;
+	protected final CrailBuffer stagingBuffer;
 	protected Unsafe unsafe;
 
-	public BlkDevStorageUnalignedFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
-										ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedFuture(BlkDevStorageEndpoint endpoint, CrailBuffer buffer, BlockInfo blockInfo,
+										long remoteOffset, CrailBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer.remaining());
 		this.buffer = buffer;
 		this.localOffset = buffer.position();
-		this.remoteMr = remoteMr;
+		this.blockInfo = blockInfo;
 		this.remoteOffset = remoteOffset;
 		this.len = buffer.remaining();
 		this.stagingBuffer = stagingBuffer;

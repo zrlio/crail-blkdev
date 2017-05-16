@@ -24,9 +24,6 @@ package com.ibm.crail.storage.blkdev.client;
 
 import com.ibm.crail.metadata.BlockInfo;
 import com.ibm.jaio.Files;
-import sun.nio.ch.DirectBuffer;
-
-import java.nio.ByteBuffer;
 
 public class BlkDevStorageUtils {
 
@@ -50,7 +47,4 @@ public class BlkDevStorageUtils {
 		return fileOffset - fileBlockOffset(fileOffset);
 	}
 
-	public static long getAddress(ByteBuffer buffer) {
-		return ((DirectBuffer)buffer).address();
-	}
 }

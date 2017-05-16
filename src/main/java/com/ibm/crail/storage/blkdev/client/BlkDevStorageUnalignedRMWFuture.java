@@ -23,6 +23,7 @@
 package com.ibm.crail.storage.blkdev.client;
 
 
+import com.ibm.crail.CrailBuffer;
 import com.ibm.crail.metadata.BlockInfo;
 import com.ibm.crail.storage.StorageFuture;
 import com.ibm.crail.storage.StorageResult;
@@ -30,7 +31,6 @@ import com.ibm.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -43,8 +43,8 @@ public final class BlkDevStorageUnalignedRMWFuture extends BlkDevStorageUnaligne
 
 	private volatile boolean done;
 
-	public BlkDevStorageUnalignedRMWFuture(BlkDevStorageEndpoint endpoint, ByteBuffer buffer, BlockInfo remoteMr, long remoteOffset,
-										   ByteBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
+	public BlkDevStorageUnalignedRMWFuture(BlkDevStorageEndpoint endpoint, CrailBuffer buffer, BlockInfo remoteMr, long remoteOffset,
+										   CrailBuffer stagingBuffer) throws NoSuchFieldException, IllegalAccessException {
 		super(endpoint, buffer, remoteMr, remoteOffset, stagingBuffer);
 		future = null;
 		done = false;
@@ -58,14 +58,14 @@ public final class BlkDevStorageUnalignedRMWFuture extends BlkDevStorageUnaligne
 	@Override
 	public void signal(int result) throws IOException, InterruptedException {
 		if (result >= 0) {
-			long srcAddr = BlkDevStorageUtils.getAddress(buffer) + localOffset;
-			long dstAddr = BlkDevStorageUtils.getAddress(stagingBuffer) + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
+			long srcAddr = buffer.address() + localOffset;
+			long dstAddr = stagingBuffer.address() + BlkDevStorageUtils.fileBlockOffset(remoteOffset);
 			unsafe.copyMemory(srcAddr, dstAddr, len);
 
 			stagingBuffer.clear();
 			int alignedLen = (int) BlkDevStorageUtils.alignLength(remoteOffset, len);
 			stagingBuffer.limit(alignedLen);
-			future = endpoint.write(stagingBuffer, null, remoteMr, BlkDevStorageUtils.alignOffset(remoteOffset));
+			future = endpoint.write(stagingBuffer, blockInfo, BlkDevStorageUtils.alignOffset(remoteOffset));
 		}
 		super.signal(result);
 	}
