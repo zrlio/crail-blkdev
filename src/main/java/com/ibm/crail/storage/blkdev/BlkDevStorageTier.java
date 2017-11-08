@@ -22,36 +22,10 @@
 
 package com.ibm.crail.storage.blkdev;
 
-import com.ibm.crail.conf.CrailConfiguration;
 import com.ibm.crail.storage.StorageServer;
-import com.ibm.crail.storage.blkdev.client.BlkDevStorageEndpoint;
-import com.ibm.crail.storage.StorageEndpoint;
 import com.ibm.crail.storage.StorageTier;
-import com.ibm.crail.utils.CrailUtils;
-import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-public class BlkDevStorageTier extends StorageTier {
-
-	private static final Logger LOG = CrailUtils.getLogger();
-
-	public void printConf(Logger logger) {
-		BlkDevStorageConstants.printConf(logger);
-	}
-
-	public void init(CrailConfiguration crailConfiguration, String[] args) throws IOException {
-		BlkDevStorageConstants.updateConstants(crailConfiguration);
-		BlkDevStorageConstants.verify();
-	}
-
-	public StorageEndpoint createEndpoint(InetSocketAddress inetSocketAddress) throws IOException {
-		return new BlkDevStorageEndpoint();
-	}
-
-	public void close() throws Exception {
-	}
+public class BlkDevStorageTier extends BlkDevStorageClient implements StorageTier {
 
 	public StorageServer launchServer() throws Exception {
 		return new BlkDevStorageServer();

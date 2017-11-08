@@ -89,4 +89,8 @@ public class BlkDevStorageConstants {
 		logger.info(fullKey(DATA_PATH_KEY) + " " + DATA_PATH);
 		logger.info(fullKey(QUEUE_DEPTH_KEY) + " " + QUEUE_DEPTH);
 	}
+
+	public static void init(CrailConfiguration conf, String[] args) throws Exception{
+		BlkDevStorageConstants.updateConstants(conf);
+	}
 }

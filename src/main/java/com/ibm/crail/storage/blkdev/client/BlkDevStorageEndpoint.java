@@ -114,7 +114,6 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 
 //		LOG.debug("op = " + op.name() +
 //				", position = " + buffer.position() +
-//				", Buffer address = " + Long.toHexString(BlkDevStorageUtils.getAddress(buffer)) +
 //				", localOffset = " + buffer.position() +
 //				", remoteOffset = " + remoteOffset +
 //				", remoteAddr = " + blockInfo.getAddr() +

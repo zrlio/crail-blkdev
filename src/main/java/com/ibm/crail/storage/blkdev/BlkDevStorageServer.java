@@ -23,12 +23,15 @@
 package com.ibm.crail.storage.blkdev;
 
 
-import com.ibm.crail.metadata.DataNodeStatistics;
-import com.ibm.crail.storage.StorageRpcClient;
+import com.ibm.crail.conf.CrailConfiguration;
 import com.ibm.crail.storage.StorageServer;
+import com.ibm.crail.storage.StorageResource;
+import com.ibm.crail.storage.blkdev.client.BlkDevStorageEndpoint;
 import com.ibm.crail.utils.CrailUtils;
+
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.FileSystems;
@@ -38,39 +41,59 @@ import java.nio.file.Path;
 public class BlkDevStorageServer implements StorageServer {
 	private static final Logger LOG = CrailUtils.getLogger();
 
-	private final InetSocketAddress storageAddr;
-	private final Path path;
+	private InetSocketAddress storageAddr;
+	private Path path;
 	private boolean isAlive;
+	private boolean initialized = false;
+	private long addr;
+	private long alignedSize;
+	private BlkDevStorageEndpoint endPoint;
 
 	public BlkDevStorageServer() throws Exception {
+
+	}
+	public void init(CrailConfiguration crailConfiguration, String[] args) throws Exception {
+		if (initialized) {
+			throw new IOException("BlkDevStorageTier already initialized");
+		}
+		initialized = true;
+		BlkDevStorageConstants.init(crailConfiguration, args);
 		LOG.info("initalizing block device datanode");
 		// We do not support multiple block devices yet
 		InetAddress address = InetAddress.getLoopbackAddress();
 		int port = 12345;
+
 		storageAddr = new InetSocketAddress(address, port);
 		String directory = BlkDevStorageConstants.DATA_PATH;
 		path = FileSystems.getDefault().getPath(directory);
 		if (!Files.exists(path)) {
 			throw new IllegalArgumentException("BlkDev path does not exists!");
 		}
-		isAlive = false;
+		isAlive = true;
+		alignedSize = BlkDevStorageConstants.STORAGE_LIMIT - (BlkDevStorageConstants.STORAGE_LIMIT % BlkDevStorageConstants.ALLOCATION_SIZE);
+		endPoint = new BlkDevStorageEndpoint();
+		addr = 0;
 	}
 
-	public void registerResources(StorageRpcClient storageRpcClient) throws Exception {
-		long alignedSize = BlkDevStorageConstants.STORAGE_LIMIT;
-		alignedSize -= (BlkDevStorageConstants.STORAGE_LIMIT % BlkDevStorageConstants.ALLOCATION_SIZE);
-		long addr = 0;
-		while (alignedSize > 0) {
-			DataNodeStatistics statistics = storageRpcClient.getDataNode();
-			LOG.info("datanode statistics, freeBlocks " + statistics.getFreeBlockCount());
+	@Override
+	public void printConf(Logger log) {
+		BlkDevStorageConstants.printConf(log);
+	}
 
+	@Override
+	public StorageResource allocateResource() throws Exception {
+		StorageResource resource = null;
+		if (alignedSize > 0) {
 			LOG.info("new block, length " + BlkDevStorageConstants.ALLOCATION_SIZE);
-			LOG.debug("block stag 0, addr 0, length " + BlkDevStorageConstants.ALLOCATION_SIZE);
 			alignedSize -= BlkDevStorageConstants.ALLOCATION_SIZE;
-			storageRpcClient.setBlock(addr, (int) BlkDevStorageConstants.ALLOCATION_SIZE, 0);
+			resource = StorageResource.createResource(addr, (int) BlkDevStorageConstants.ALLOCATION_SIZE, 0);
 			addr += BlkDevStorageConstants.ALLOCATION_SIZE;
 		}
-		isAlive = true;
+		return resource;
+	}
+
+	public void run() {
+		LOG.info("BlkDevStorageTier started");
 	}
 
 	public boolean isAlive() {
