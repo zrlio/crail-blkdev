@@ -50,11 +50,11 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 	private final ThreadLocal<AsynchronousIOOperationArray> writeOp;
 	private final BufferCache cache;
 
-	public BlkDevStorageEndpoint() throws IOException {
+	public BlkDevStorageEndpoint(String devName) throws IOException {
 		if (BlkDevStorageUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
 			throw new IllegalArgumentException("Block device requires directory record size to be block aligned");
 		}
-		Path path = FileSystems.getDefault().getPath(BlkDevStorageConstants.DATA_PATH);
+		Path path = FileSystems.getDefault().getPath(devName);
 		this.file = new File(path, OpenOption.READ, OpenOption.WRITE, OpenOption.DIRECT, OpenOption.SYNC);
 		this.concurrentOps = new Semaphore(BlkDevStorageConstants.QUEUE_DEPTH, true);
 		this.queue = new AsynchronousIOQueue(BlkDevStorageConstants.QUEUE_DEPTH);

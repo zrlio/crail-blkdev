@@ -8,22 +8,26 @@ import com.ibm.crail.utils.CrailUtils;
 import com.ibm.crail.storage.blkdev.client.BlkDevStorageEndpoint;
 
 import java.io.IOException;
+import java.util.HashMap;
 import org.slf4j.Logger;
 
 public class BlkDevStorageClient implements StorageClient{
-    private static final Logger LOG = CrailUtils.getLogger();
+	private HashMap<Long, String> nodeMap;
 
 	public void printConf(Logger logger) {
-		BlkDevStorageConstants.printConf(logger);
+		BlkDevStorageConstants.printClientConf(logger);
 	}
 
 	public void init(CrailConfiguration crailConfiguration, String[] args) throws IOException {
-		BlkDevStorageConstants.updateConstants(crailConfiguration);
+		nodeMap  = new HashMap<Long, String>();
+		BlkDevStorageConstants.updateClientConstants(nodeMap, crailConfiguration);
 		BlkDevStorageConstants.verify();
 	}
 
 	public StorageEndpoint createEndpoint(DataNodeInfo info) throws IOException {
-		return new BlkDevStorageEndpoint();
+		long key = BlkDevStorageConstants.calcKey(info.getIpAddress(), info.getPort());
+		String vDevPath = nodeMap.get(key);
+		return new BlkDevStorageEndpoint(vDevPath);
 	}
 
 	public void close() throws Exception {
