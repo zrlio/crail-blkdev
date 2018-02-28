@@ -8,6 +8,7 @@ import com.ibm.crail.utils.CrailUtils;
 import com.ibm.crail.storage.blkdev.client.BlkDevStorageEndpoint;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import org.slf4j.Logger;
 
@@ -27,6 +28,10 @@ public class BlkDevStorageClient implements StorageClient{
 	public StorageEndpoint createEndpoint(DataNodeInfo info) throws IOException {
 		long key = BlkDevStorageConstants.calcKey(info.getIpAddress(), info.getPort());
 		String vDevPath = nodeMap.get(key);
+		if (vDevPath == null) {
+			throw new IllegalArgumentException("No path for datanode with ip = " +
+					Arrays.toString(info.getIpAddress()) + " and port = " + info.getPort());
+		}
 		return new BlkDevStorageEndpoint(vDevPath);
 	}
 
