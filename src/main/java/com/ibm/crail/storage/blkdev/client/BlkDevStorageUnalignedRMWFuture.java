@@ -23,11 +23,11 @@
 package com.ibm.crail.storage.blkdev.client;
 
 
-import com.ibm.crail.CrailBuffer;
-import com.ibm.crail.metadata.BlockInfo;
-import com.ibm.crail.storage.StorageFuture;
-import com.ibm.crail.storage.StorageResult;
-import com.ibm.crail.utils.CrailUtils;
+import org.apache.crail.CrailBuffer;
+import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.storage.StorageFuture;
+import org.apache.crail.storage.StorageResult;
+import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;

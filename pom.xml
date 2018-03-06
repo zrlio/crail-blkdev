@@ -11,9 +11,8 @@
   <groupId>com.ibm.crail</groupId>
   <artifactId>crail-storage-blkdev</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <name>crail-storage-blkdev</name>
-  <url>http://maven.apache.org</url>
 
   <dependencies>
     <dependency>
@@ -28,7 +27,7 @@
       <version>1.2.17</version>
     </dependency>
     <dependency>
-      <groupId>com.ibm.crail</groupId>
+      <groupId>org.apache.crail</groupId>
       <artifactId>crail-storage</artifactId>
       <version>1.0</version>
     </dependency>

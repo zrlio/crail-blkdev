@@ -22,8 +22,8 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.metadata.BlockInfo;
 import com.ibm.jaio.Files;
+import org.apache.crail.metadata.BlockInfo;
 
 public class BlkDevStorageUtils {
 

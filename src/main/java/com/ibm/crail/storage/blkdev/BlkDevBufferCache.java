@@ -22,10 +22,10 @@
 
 package com.ibm.crail.storage.blkdev;
 
-import com.ibm.crail.CrailBuffer;
-import com.ibm.crail.conf.CrailConstants;
-import com.ibm.crail.memory.BufferCache;
-import com.ibm.crail.memory.OffHeapBuffer;
+import org.apache.crail.CrailBuffer;
+import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.memory.BufferCache;
+import org.apache.crail.memory.OffHeapBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

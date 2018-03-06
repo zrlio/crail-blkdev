@@ -22,8 +22,8 @@
 
 package com.ibm.crail.storage.blkdev;
 
-import com.ibm.crail.conf.CrailConfiguration;
-import com.ibm.crail.conf.CrailConstants;
+import org.apache.crail.conf.CrailConfiguration;
+import org.apache.crail.conf.CrailConstants;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -168,15 +168,15 @@ public class BlkDevStorageConstants {
 	}
 
 	/*
-	 * Called only from the target size 
+	 * Called only from the target size
 	 */
 	public static void updateTargetConstants(CrailConfiguration conf) {
-		
+
 		String arg = get(conf, STORAGE_BLKDEV_IP_KEY);
 		if (arg != null) {
 			STORAGE_BLKDEV_IP = arg;
 		}
-		
+
 		arg = get(conf, STORAGE_BLKDEV_PORT_KEY);
 		if (arg != null) {
 			STORAGE_BLKDEV_PORT = Integer.parseInt(arg);
@@ -199,7 +199,7 @@ public class BlkDevStorageConstants {
 		logger.info(fullKey(QUEUE_DEPTH_KEY) + " " + QUEUE_DEPTH);
 		logger.info(fullKey(STORAGE_LIMIT_KEY) + " " + STORAGE_LIMIT);
 	}
-	
+
 	public static void printTargetConf(Logger logger) {
 		logger.info(fullKey(STORAGE_SIZE_KEY) + " " + STORAGE_SIZE);
 		logger.info(fullKey(ALLOCATION_SIZE_KEY) + " " + ALLOCATION_SIZE);

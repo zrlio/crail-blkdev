@@ -22,8 +22,8 @@
 
 package com.ibm.crail.storage.blkdev;
 
-import com.ibm.crail.storage.StorageServer;
-import com.ibm.crail.storage.StorageTier;
+import org.apache.crail.storage.StorageServer;
+import org.apache.crail.storage.StorageTier;
 
 public class BlkDevStorageTier extends BlkDevStorageClient implements StorageTier {
 

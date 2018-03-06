@@ -23,12 +23,10 @@
 package com.ibm.crail.storage.blkdev;
 
 
-import com.ibm.crail.conf.CrailConfiguration;
-import com.ibm.crail.storage.StorageServer;
-import com.ibm.crail.storage.StorageResource;
-import com.ibm.crail.storage.blkdev.client.BlkDevStorageEndpoint;
-import com.ibm.crail.utils.CrailUtils;
-
+import org.apache.crail.conf.CrailConfiguration;
+import org.apache.crail.storage.StorageResource;
+import org.apache.crail.storage.StorageServer;
+import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -41,13 +39,15 @@ public class BlkDevStorageServer implements StorageServer {
 	private InetSocketAddress storageAddr;
 	private Path path;
 	private boolean isAlive;
-	private boolean initialized = false;
+	private boolean initialized;
 	private long addr;
 	private long alignedSize;
 
-	public BlkDevStorageServer() throws Exception {
-
+	public BlkDevStorageServer() {
+		this.isAlive = false;
+		this.initialized = false;
 	}
+
 	public void init(CrailConfiguration crailConfiguration, String[] args) throws Exception {
 		if (initialized) {
 			throw new IOException("BlkDevStorageTier already initialized");
@@ -67,13 +67,11 @@ public class BlkDevStorageServer implements StorageServer {
 
 	}
 
-	@Override
 	public void printConf(Logger log) {
 		BlkDevStorageConstants.printTargetConf(log);
 	}
 
-	@Override
-	public StorageResource allocateResource() throws Exception {
+	public StorageResource allocateResource() {
 		StorageResource resource = null;
 		if (alignedSize > 0) {
 			LOG.info("new block, length " + BlkDevStorageConstants.ALLOCATION_SIZE);

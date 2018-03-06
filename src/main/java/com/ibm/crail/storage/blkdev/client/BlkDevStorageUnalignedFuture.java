@@ -22,8 +22,8 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.CrailBuffer;
-import com.ibm.crail.metadata.BlockInfo;
+import org.apache.crail.CrailBuffer;
+import org.apache.crail.metadata.BlockInfo;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
