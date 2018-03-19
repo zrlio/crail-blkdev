@@ -20,7 +20,6 @@ public class BlkDevStorageClient implements StorageClient{
 	public void init(CrailConfiguration crailConfiguration, String[] args) throws IOException {
 		nodeMap  = new HashMap<Long, String>();
 		BlkDevStorageConstants.updateClientConstants(nodeMap, crailConfiguration);
-		BlkDevStorageConstants.verify();
 	}
 
 	public StorageEndpoint createEndpoint(DataNodeInfo info) throws IOException {

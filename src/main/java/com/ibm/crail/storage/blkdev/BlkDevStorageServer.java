@@ -55,6 +55,7 @@ public class BlkDevStorageServer implements StorageServer {
 		initialized = true;
 
 		BlkDevStorageConstants.init(crailConfiguration, args);
+		BlkDevStorageConstants.verify();
 
 		String ipAddr = BlkDevStorageConstants.STORAGE_BLKDEV_IP;
 		int port = BlkDevStorageConstants.STORAGE_BLKDEV_PORT;
