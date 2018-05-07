@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.ibm.crail</groupId>
+    <groupId>org.apache.crail</groupId>
     <artifactId>crail-parent</artifactId>
     <version>1.0</version>
   </parent>

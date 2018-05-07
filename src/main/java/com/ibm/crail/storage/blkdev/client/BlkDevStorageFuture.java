@@ -22,16 +22,15 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
-import org.apache.crail.storage.StorageFuture;
-import org.apache.crail.storage.StorageResult;
-import org.apache.crail.utils.CrailUtils;
-import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.crail.storage.StorageFuture;
+import org.apache.crail.storage.StorageResult;
+import org.apache.crail.utils.CrailUtils;
+import org.slf4j.Logger;
 
 public class BlkDevStorageFuture implements StorageFuture, StorageResult {
 	protected final BlkDevStorageEndpoint endpoint;

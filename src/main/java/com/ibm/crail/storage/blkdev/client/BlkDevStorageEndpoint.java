@@ -22,24 +22,29 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
-import com.ibm.crail.storage.blkdev.BlkDevBufferCache;
 import com.ibm.crail.storage.blkdev.BlkDevStorageConstants;
-import com.ibm.jaio.*;
-import org.apache.crail.CrailBuffer;
-import org.apache.crail.conf.CrailConstants;
-import org.apache.crail.memory.BufferCache;
-import org.apache.crail.metadata.BlockInfo;
-import org.apache.crail.storage.StorageEndpoint;
-import org.apache.crail.storage.StorageFuture;
-import org.apache.crail.utils.CrailUtils;
-import org.slf4j.Logger;
-
+import com.ibm.jaio.AsynchronousIOOperationArray;
+import com.ibm.jaio.AsynchronousIOQueue;
+import com.ibm.jaio.AsynchronousIORead;
+import com.ibm.jaio.AsynchronousIOResultArray;
+import com.ibm.jaio.AsynchronousIOWrite;
+import com.ibm.jaio.File;
+import com.ibm.jaio.Files;
+import com.ibm.jaio.OpenOption;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
+import org.apache.crail.CrailBuffer;
+import org.apache.crail.CrailBufferCache;
+import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.storage.StorageEndpoint;
+import org.apache.crail.storage.StorageFuture;
+import org.apache.crail.utils.CrailUtils;
+import org.slf4j.Logger;
 
 public class BlkDevStorageEndpoint implements StorageEndpoint {
 	private static final Logger LOG = CrailUtils.getLogger();
@@ -50,9 +55,9 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 	private final BlockingQueue<AsynchronousIOResultArray<BlkDevStorageFuture>> results;
 	private final ThreadLocal<AsynchronousIOOperationArray> readOp;
 	private final ThreadLocal<AsynchronousIOOperationArray> writeOp;
-	private final BufferCache cache;
+	private final CrailBufferCache bufferCache;
 
-	public BlkDevStorageEndpoint(String devName) throws IOException {
+	public BlkDevStorageEndpoint(String devName, CrailBufferCache bufferCache) throws IOException {
 		if (BlkDevStorageUtils.fileBlockOffset(CrailConstants.DIRECTORY_RECORD) != 0) {
 			throw new IllegalArgumentException("Block device requires directory record size to be block aligned");
 		}
@@ -85,14 +90,14 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 				return ops;
 			}
 		};
-		this.cache = new BlkDevBufferCache();
+		this.bufferCache = bufferCache;
 	}
 
 	enum Operation {
 		WRITE,
 		READ;
 
-		private Operation() {}
+		Operation() {}
 	}
 
 	StorageFuture Op(Operation op, CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {
@@ -154,7 +159,12 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 			long alignedSize = BlkDevStorageUtils.alignLength(remoteOffset, buffer.remaining());
 			long alignedFileOffset = BlkDevStorageUtils.alignOffset(fileOffset);
 
-			CrailBuffer stagingBuffer = cache.getBuffer();
+			CrailBuffer stagingBuffer;
+			try {
+				stagingBuffer = bufferCache.allocateBuffer();
+			} catch (Exception e) {
+				throw new IOException(e);
+			}
 			stagingBuffer.clear();
 			stagingBuffer.limit((int)alignedSize);
 			//TODO: make sure buffer is aligned! We can align ourselfs or try to enforce java memalign option.
@@ -211,7 +221,11 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 	}
 
 	void putBuffer(CrailBuffer buffer) throws IOException {
-		cache.putBuffer(buffer);
+		try {
+			bufferCache.freeBuffer(buffer);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
 	}
 
 	public StorageFuture write(CrailBuffer buffer, BlockInfo blockInfo, long remoteOffset) throws IOException, InterruptedException {

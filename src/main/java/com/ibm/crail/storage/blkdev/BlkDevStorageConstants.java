@@ -22,16 +22,15 @@
 
 package com.ibm.crail.storage.blkdev;
 
-import org.apache.crail.conf.CrailConfiguration;
-import org.apache.crail.conf.CrailConstants;
-import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
+import org.apache.crail.conf.CrailConfiguration;
+import org.apache.crail.conf.CrailConstants;
+import org.slf4j.Logger;
 
 public class BlkDevStorageConstants {
 

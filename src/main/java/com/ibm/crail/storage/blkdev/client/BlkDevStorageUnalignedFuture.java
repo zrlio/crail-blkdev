@@ -22,12 +22,11 @@
 
 package com.ibm.crail.storage.blkdev.client;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
 import org.apache.crail.CrailBuffer;
 import org.apache.crail.metadata.BlockInfo;
 import sun.misc.Unsafe;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
 
 public abstract class BlkDevStorageUnalignedFuture extends BlkDevStorageFuture {
 	protected final CrailBuffer buffer;

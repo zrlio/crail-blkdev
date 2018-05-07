@@ -23,15 +23,14 @@
 package com.ibm.crail.storage.blkdev;
 
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.storage.StorageResource;
 import org.apache.crail.storage.StorageServer;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.file.Path;
 
 public class BlkDevStorageServer implements StorageServer {
 	private static final Logger LOG = CrailUtils.getLogger();
