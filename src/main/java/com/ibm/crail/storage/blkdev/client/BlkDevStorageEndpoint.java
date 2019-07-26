@@ -65,7 +65,7 @@ public class BlkDevStorageEndpoint implements StorageEndpoint {
 		this.file = new File(path, OpenOption.READ, OpenOption.WRITE, OpenOption.DIRECT, OpenOption.SYNC);
 		this.concurrentOps = new Semaphore(BlkDevStorageConstants.QUEUE_DEPTH, true);
 		this.queue = new AsynchronousIOQueue(BlkDevStorageConstants.QUEUE_DEPTH);
-		this.results = new ArrayBlockingQueue(BlkDevStorageConstants.QUEUE_DEPTH);
+		this.results = new ArrayBlockingQueue(BlkDevStorageConstants.QUEUE_DEPTH*2);
 		int i = results.remainingCapacity();
 		while (i-- > 0) {
 			try {
